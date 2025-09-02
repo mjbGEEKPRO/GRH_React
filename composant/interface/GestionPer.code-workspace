@@ -1,0 +1,14 @@
+{
+  "folders": [
+	{
+		"path": "../../.."
+	},
+	{
+		"path": "../../../../gestion-personnel-api"
+	},
+	{
+		"path": "../../../../nginx-1.28.0"
+	}
+],
+  "settings": {}
+}

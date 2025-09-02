@@ -1,0 +1,15 @@
+{
+  "users": [
+    {
+      "id": 6,
+      "nom": "Tchinda",
+      "prenom": "joseph",
+      "email": "adriano@gmail.com",
+      "telephone": "674781999",
+      "statut": false,
+      "role": "Développeur",
+      "role_id": 2,
+      "departement": "Informatique"
+    }
+  ]
+}

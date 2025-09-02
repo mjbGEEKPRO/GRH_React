@@ -1,4 +1,4 @@
-import { object, string } from "yup";
+import { object, string, date } from "yup";
 
 const schema = object().shape({
   nom: string()
@@ -24,13 +24,23 @@ const schema = object().shape({
       "le numéro doit commencer par 6 et contenir 9 chiffres"
     )
     .required("Veuillez renseigner le numéro de téléphone"),
-  password: string()
-    .required("Le mot de passe est requis")
-    .min(8, "Le mot de passe doit contenir au moins 8 caractères")
-    .matches(/[a-z]/, "Au moins une lettre minuscule")
-    .matches(/[A-Z]/, "Au moins une lettre majuscule")
-    .matches(/\d/, "Au moins un chiffre")
-    .matches(/[@$!%*#?&]/, "Au moins un caractère spécial (@$!%*?&)"),
+  date_naissance: date()
+    .required("La date de naissance est requise")
+    .min(new Date("1927-01-01"), "L'année doit être supérieure à 1927")
+    .max(new Date("2025-12-31"), "L'année doit être inférieure à 2025"),
+
+  lieu_naissance: string()
+    .required("Le lieu de naissance est requis")
+    .min(2, "Minimum 2 caractères")
+    .max(100, "Maximum 100 caractères")
+    .matches(/^[a-zA-ZÀ-ÿ\s\-']+$/, "Caractères non valides"),
+  // password: string()
+  //   .required("Le mot de passe est requis")
+  //   .min(8, "Le mot de passe doit contenir au moins 8 caractères")
+  //   .matches(/[a-z]/, "Au moins une lettre minuscule")
+  //   .matches(/[A-Z]/, "Au moins une lettre majuscule")
+  //   .matches(/\d/, "Au moins un chiffre")
+  //   .matches(/[@$!%*#?&]/, "Au moins un caractère spécial (@$!%*?&)"),
 });
 
 export default schema;

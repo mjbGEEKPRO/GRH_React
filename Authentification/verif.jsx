@@ -1,7 +1,7 @@
 import { object, string } from "yup";
 
 const validateschem = object().shape({
-  email: string().matches(
+  email_pro: string().matches(
     /@gmail.com/,
     "l'adresse email doit être sous ce forma (exp@gmail.com) ")
     .required(

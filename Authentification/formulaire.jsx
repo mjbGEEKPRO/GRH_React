@@ -4,7 +4,7 @@ import schema from "./validation";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Select from "./select";
+import Select from "../composant/select";
 
 function Formulaire() {
   const navigate = useNavigate();
@@ -15,15 +15,11 @@ function Formulaire() {
     email: "",
     poste: "",
     telephone: "",
-    password: "",
+    date_naissance: "",
+    lieu_naissance: "",
   });
 
   const [erreur, setErreur] = useState({});
-  const [afficher, setAfficher] = useState(false);
-
-  const Afficher = (e) => {
-    setAfficher(e.target.checked);
-  };
 
   const Valeur = (e) => {
     setInfos({
@@ -39,6 +35,27 @@ function Formulaire() {
     });
   };
 
+  // Validation de la date de naissance
+  const validateDateNaissance = (date) => {
+    if (!date) return false;
+
+    const selectedDate = new Date(date);
+    const currentYear = new Date().getFullYear();
+    const selectedYear = selectedDate.getFullYear();
+
+    // Vérifier que l'année est entre 1927 et 2025
+    if (selectedYear < 1927 || selectedYear > 2025) {
+      return false;
+    }
+
+    // Vérifier que la date n'est pas dans le futur
+    if (selectedDate > new Date()) {
+      return false;
+    }
+
+    return true;
+  };
+
   const Ajouter = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -46,10 +63,20 @@ function Formulaire() {
     let loadingToast = null;
 
     try {
+      // Validation personnalisée de la date de naissance
+      if (!validateDateNaissance(infos.date_naissance)) {
+        setErreur({
+          ...erreur,
+          date_naissance:
+            "La date de naissance doit être entre 1927 et aujourd'hui",
+        });
+        setLoading(false);
+        return;
+      }
+      console.log("donner send yup ", infos);
       await schema.validate(infos, { abortEarly: false });
 
       loadingToast = toast.loading("Veuillez patienter...");
-
       const response = await axios.post(
         "http://127.0.0.1:8000/api/verif",
         infos
@@ -64,12 +91,13 @@ function Formulaire() {
         });
 
         console.log("Utilisateur créé:", response.data.user);
-
+        const userForAdmin = infos;
+        console.log("user for admin form ", userForAdmin);
         setTimeout(() => {
           navigate("/code", {
             state: {
               email: infos.email,
-              userForAdmin: response.data.user,
+              userForAdmin: userForAdmin,
             },
           });
         }, 1500);
@@ -81,7 +109,8 @@ function Formulaire() {
           email: "",
           poste: "",
           telephone: "",
-          password: "",
+          date_naissance: "",
+          lieu_naissance: "",
         });
         setErreur({});
       }
@@ -99,7 +128,7 @@ function Formulaire() {
       } else if (error.response) {
         const serverErrorMessage = error.response.data.message;
         if (error.response.status === 422) {
-          toast.error(`❌ ${serverErrorMessage}`);
+          toast.info(`❌ ${serverErrorMessage}`);
         } else if (error.response.status === 500) {
           toast.error(`❌ ${serverErrorMessage}`);
         }
@@ -110,6 +139,24 @@ function Formulaire() {
       setLoading(false);
     }
   };
+
+  // Calculer l'âge pour affichage
+  const calculateAge = (dateNaissance) => {
+    if (!dateNaissance) return null;
+    const today = new Date();
+    const birthDate = new Date(dateNaissance);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+    return age;
+  };
+
+  const age = calculateAge(infos.dateNaissance);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4 relative overflow-hidden">
@@ -142,7 +189,7 @@ function Formulaire() {
           </div>
 
           <form onSubmit={Ajouter} className="space-y-6">
-            {/* Les champs du formulaire restent identiques mais avec disabled={loading} */}
+            {/* Nom et Prénom */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative group">
                 <input
@@ -211,6 +258,7 @@ function Formulaire() {
               </div>
             </div>
 
+            {/* Email */}
             <div className="relative group">
               <input
                 type="email"
@@ -224,7 +272,7 @@ function Formulaire() {
                   erreur.email
                     ? "border-red-400 bg-red-500/10"
                     : "hover:bg-white/15"
-                }`}
+                } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
               />
               {erreur.email && (
                 <p className="text-red-300 text-sm mt-2 flex items-center">
@@ -244,6 +292,100 @@ function Formulaire() {
               )}
             </div>
 
+            {/* Date de naissance */}
+            <div className="relative group">
+              <label className="block text-white/80 text-sm font-medium mb-2">
+                Date de naissance
+              </label>
+              <input
+                type="date"
+                id="date_naissance"
+                name="date_naissance"
+                value={infos.date_naissance}
+                onChange={Valeur}
+                disabled={loading}
+                min="1927-01-01"
+                max={new Date().toISOString().split("T")[0]}
+                className={`w-full px-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm ${
+                  erreur.dateNaissance
+                    ? "border-red-400 bg-red-500/10"
+                    : "hover:bg-white/15"
+                } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+                style={{
+                  colorScheme: "dark",
+                }}
+              />
+              {age && age >= 0 && (
+                <p className="text-blue-300 text-sm mt-1 flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  Âge : {age} ans
+                </p>
+              )}
+              {erreur.dateNaissance && (
+                <p className="text-red-300 text-sm mt-2 flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {erreur.dateNaissance}
+                </p>
+              )}
+            </div>
+
+            {/* Lieu de naissance */}
+            <div className="relative group">
+              <input
+                type="text"
+                id="lieu_naissance"
+                name="lieu_naissance"
+                placeholder="Lieu de naissance"
+                value={infos.lieu_naissance}
+                onChange={Valeur}
+                disabled={loading}
+                className={`w-full px-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm ${
+                  erreur.lieuNaissance
+                    ? "border-red-400 bg-red-500/10"
+                    : "hover:bg-white/15"
+                } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+              />
+              {erreur.lieuNaissance && (
+                <p className="text-red-300 text-sm mt-2 flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {erreur.lieuNaissance}
+                </p>
+              )}
+            </div>
+
+            {/* Téléphone et Poste */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative group">
                 <input
@@ -258,7 +400,7 @@ function Formulaire() {
                     erreur.telephone
                       ? "border-red-400 bg-red-500/10"
                       : "hover:bg-white/15"
-                  }`}
+                  } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
                 />
                 {erreur.telephone && (
                   <p className="text-red-300 text-sm mt-2 flex items-center">
@@ -283,78 +425,12 @@ function Formulaire() {
                   value={infos.poste}
                   onChange={PosteChange}
                   error={erreur.poste}
+                  disabled={loading}
                 />
               </div>
             </div>
 
-            <div className="relative group">
-              <input
-                type={afficher ? "text" : "password"}
-                id="password"
-                name="password"
-                placeholder="Mot de passe"
-                value={infos.password}
-                onChange={Valeur}
-                className={`w-full px-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm ${
-                  erreur.password
-                    ? "border-red-400 bg-red-500/10"
-                    : "hover:bg-white/15"
-                }`}
-              />
-              {erreur.password && (
-                <p className="text-red-300 text-sm mt-2 flex items-center">
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  {erreur.password}
-                </p>
-              )}
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <label className="relative flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={afficher}
-                  onChange={Afficher}
-                  className="sr-only"
-                />
-                <div
-                  className={`w-6 h-6 rounded-lg border-2 border-white/30 flex items-center justify-center transition-all duration-200 ${
-                    afficher
-                      ? "bg-gradient-to-r from-purple-500 to-pink-500 border-transparent"
-                      : "hover:border-white/50"
-                  }`}
-                >
-                  {afficher && (
-                    <svg
-                      className="w-4 h-4 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </div>
-                <span className="ml-3 text-gray-300 text-sm">
-                  Afficher le mot de passe
-                </span>
-              </label>
-            </div>
+            {/* Bouton de soumission */}
             <button
               type="submit"
               disabled={loading}
@@ -421,6 +497,13 @@ function Formulaire() {
               </Link>
             </p>
           </div>
+        </div>
+
+        {/* Informations supplémentaires */}
+        <div className="mt-6 text-center">
+          <p className="text-gray-400 text-sm">
+            📅 Date de naissance acceptée : 1927 - {new Date().getFullYear()}
+          </p>
         </div>
       </div>
 

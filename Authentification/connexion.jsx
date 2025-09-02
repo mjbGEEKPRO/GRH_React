@@ -6,11 +6,11 @@ import { FcGoogle } from "react-icons/fc";
 import { FaUser } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { authUtils } from "./redirectionForm";
+import { authUtils } from "../utils/redirectionForm";
 
 function Connexion() {
   const [infos, setInfos] = useState({
-    email: "",
+    email_pro: "",
     password: "",
   });
   const [erreur, setErreur] = useState({});
@@ -19,31 +19,33 @@ function Connexion() {
 
   const navigate = useNavigate();
 
-  // // Vérifier si déjà connecté
-  // useEffect(() => {
-  //   if (authUtils.isAuthenticated()) {
-  //     const user = authUtils.getUserData();
-  //     navigate(authUtils.getRedirectPath(user));
-  //   }
-  // }, [navigate]);
   useEffect(() => {
-    const checkIfAlreadyLoggedIn = async () => {
-      const isValid = await authUtils.verifyAndRedirect();
-      if (isValid) {
-        // Déjà connecté avec token valide → rediriger
+    const checkIfAlreadyLoggedIn = () => {
+      // localStorage.removeItem("user_data");
+      // localStorage.removeItem("access_token");
+      // localStorage.removeItem("token_expires_at");
+      // localStorage.removeItem("token_expires_in");
+      // localStorage.removeItem("login_time");
+      //  Vérification simple et rapide
+      if (authUtils.isAuthenticated()) {
+        console.log(" Utilisateur déjà connecté, redirection...");
         const user = authUtils.getUserData();
         const redirectPath = authUtils.getRedirectPath(user);
+        console.log("redirection vers", redirectPath, "user info", user);
         navigate(redirectPath);
+      } else {
+        console.log("Utilisateur pas connecté, affichage du formulaire");
       }
     };
 
+    // Vérifier une seule fois au montage du composant
     checkIfAlreadyLoggedIn();
-  }, [navigate]);
+  }, []); // Dépendances vides pour éviter les re-exécutions
 
-  //  Configurer l'interceptor
+  // Configuration de l'interceptor une seule fois
   useEffect(() => {
     authUtils.setupAxiosInterceptor();
-  }, []);
+  }, []); // Dépendances vides
 
   const Afficher = (e) => {
     setAfficher(e.target.checked);
@@ -69,38 +71,43 @@ function Connexion() {
         infos
       );
 
+      // 🔍 AJOUTEZ CES LOGS
+      console.log("=== RÉPONSE COMPLÈTE ===");
+      console.log("Response:", response.data);
+      console.log("User:", response.data.user);
+      console.log("Département:", response.data.user?.departement);
+      console.log("Poste:", response.data.user?.poste);
+      console.log("=====================");
+
       const serverMessage = response.data.message;
 
       if (response.data.success) {
-        toast.update(loadingToast, {
-          render: `✅ ${serverMessage}`,
-          type: "success",
-          isLoading: false,
-          autoClose: 2000,
-        });
+        toast.success(`✅ ${serverMessage}`, { autoClose: 2000 });
 
-        //  Utiliser authUtils pour sauvegarder
-        authUtils.setUserData(response.data.user, response.data.access_token);
-        console.log("donner sauvegarder ", response.data.user);
-        //  Redirection
-        console.log("departement redirection", response.data.user.departement);
+        authUtils.setUserData(
+          response.data.user,
+          response.data.access_token,
+          response.data.expires_at,
+          response.data.expires_in
+        );
+
         const redirectPath = authUtils.getRedirectPath(response.data.user);
+        console.log("Redirection vers:", redirectPath);
 
-        setTimeout(() => {
-          navigate(redirectPath);
-        }, 1500);
+        // Navigation immédiate sans setTimeout
+        window.location.href = redirectPath;
 
         // Reset du formulaire
-        setInfos({
-          email: "",
-          password: "",
-        });
+        setInfos({ email_pro: "", password: "" });
         setErreur({});
       }
     } catch (error) {
+      // ✅ Fermer le toast de chargement en cas d'erreur
       if (loadingToast) {
         toast.dismiss(loadingToast);
       }
+
+      console.log("Erreur complète:", error);
 
       if (error.name === "ValidationError") {
         const validationErrors = {};
@@ -109,16 +116,20 @@ function Connexion() {
         });
         setErreur(validationErrors);
       } else if (error.response) {
-        const status = error.response.status;
         const serverErrorMessage = error.response.data.message;
-
-        if ([422, 401, 403, 404].includes(status)) {
-          toast.error(`🚫 ${serverErrorMessage}`);
-        } else if (status === 500) {
+        if (
+          error.response.status === 422 ||
+          error.response.status === 403 ||
+          error.response.status === 401 ||
+          error.response.status === 404
+        ) {
+          toast.info(`❌ ${serverErrorMessage}`);
+        } else if (error.response.status === 500) {
           toast.error(`❌ ${serverErrorMessage}`);
         }
       } else {
-        toast.error("❌ Erreur de connexion, veuillez réessayer");
+        toast.error("❌ Erreur ", error);
+        console.log("erreur", error);
       }
     } finally {
       setLoading(false);
@@ -143,17 +154,17 @@ function Connexion() {
             <div>
               <input
                 type="text"
-                id="email"
-                name="email"
+                id="email_pro"
+                name="email_pro"
                 placeholder="Adresse email"
-                value={infos.email}
+                value={infos.email_pro}
                 onChange={Valeur}
                 disabled={loading}
                 className={`w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300 ${
-                  erreur.email ? "border-red-400 bg-red-500/20" : ""
+                  erreur.email_pro ? "border-red-400 bg-red-500/20" : ""
                 } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
               />
-              {erreur.email && (
+              {erreur.email_pro && (
                 <div className="flex items-center mt-2">
                   <svg
                     className="w-4 h-4 text-red-300 mr-1"
@@ -168,7 +179,7 @@ function Connexion() {
                       d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     ></path>
                   </svg>
-                  <p className="text-red-300 text-sm">{erreur.email}</p>
+                  <p className="text-red-300 text-sm">{erreur.email_pro}</p>
                 </div>
               )}
             </div>

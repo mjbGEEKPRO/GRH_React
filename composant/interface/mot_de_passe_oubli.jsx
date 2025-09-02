@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { validateCode, validatePasswords, validateEmail } from "./passverif";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
+import { validateCode, validatePasswords, validateEmail } from "../passverif";
 
 function ForgetPassword() {
   const [step, setStep] = useState(1);
@@ -21,22 +24,41 @@ function ForgetPassword() {
 
   const handleSendCode = async () => {
     setIsLoading(true);
-    setError(null);
-    setValidationErrors({});
+    try {
+      setError(null);
+      setValidationErrors({});
 
-    // Validation de l'email
-    const emailValidation = await validateEmail(email);
-    if (!emailValidation.isValid) {
-      setValidationErrors({ email: emailValidation.errors });
-      setIsLoading(false);
-      return;
+      // Validation de l'email
+      const emailValidation = await validateEmail(email);
+      if (!emailValidation.isValid) {
+        setValidationErrors({ email: emailValidation.errors });
+        setIsLoading(false);
+        return;
+      }
+
+      const res = await axios.put(
+        "http://127.0.0.1:8000/api/verifmeil ",
+        email
+      );
+      if (res.data.success) {
+        setTimeout(() => {
+          console.log(
+            `Code de réinitialisation envoyé à ${email} : ${resetCode}`
+          );
+          setStep(2);
+          setIsLoading(false);
+        }, 1500);
+      }
+    } catch {
+      const status = error.response.status;
+      const serverErrorMessage = error.response.data.message;
+
+      if ([422, 401, 403, 404].includes(status)) {
+        toast.error(`🚫 ${serverErrorMessage}`);
+      } else if (status === 500) {
+        toast.error(`❌ ${serverErrorMessage}`);
+      }
     }
-
-    setTimeout(() => {
-      console.log(`Code de réinitialisation envoyé à ${email} : ${resetCode}`);
-      setStep(2);
-      setIsLoading(false);
-    }, 1500);
   };
 
   const handleVerifyCode = async () => {
@@ -71,11 +93,19 @@ function ForgetPassword() {
       return;
     }
 
-
     console.log(`Mot de passe réinitialisé pour ${email} : ${newPassword}`);
-    setSuccess("Mot de passe réinitialisé avec succès !");
+    const formdata = {
+      email: email,
+      newPassword: confirmPassword,
+    };
+    const res = await axios.put(
+      "http://127.0.0.1:8000/api/resetpassword",
+      formdata
+    );
+
+    setSuccess(res.data.message);
     setTimeout(() => {
-      window.location.href="/connexion"
+      window.location.href = "/connexion";
     }, 2000);
   };
 
@@ -354,6 +384,19 @@ function ForgetPassword() {
           </div>
         </div>
       </div>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </div>
   );
 }

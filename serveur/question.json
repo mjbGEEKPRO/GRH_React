@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "JavaScript et java sont ils des langages identique",
+      "reponse": "non",
+      "proposition": ["non", "oui", "Aucune réponse juste"]
+    },
+    {
+      "id": 2,
+      "question": "Qui est bill gate",
+      "reponse": "Fondateur de microsoft",
+      "proposition": [
+        "Fondateur de microsoft",
+        "Fondateur de facebook",
+        "Aucune réponse juste"
+      ]
+    },
+    {
+      "id": 3,
+      "question": "C'est quoi le génie logiciel",
+      "reponse": "C'est une discipline qui vise à produire des logiciels de qualité, fiables, efficaces et adaptés aux besoins des utilisateurs. ",
+      "proposition": [
+        "C'est une discipline qui vise à produire des logiciels de qualité, fiables, efficaces et adaptés aux besoins des utilisateurs. ",
+        "C'est l'étude de l'agriculture",
+        "C'est la création de logiciel "
+      ]
+    },
+    {
+      "id": 4,
+      "question": "Qui est samuel eto'o",
+      "reponse": "un footballeur",
+      "proposition": [
+        "Un footballeur",
+        "le fondateur de facebook",
+        "Un artiste"
+      ]
+    }
+  ]
+}

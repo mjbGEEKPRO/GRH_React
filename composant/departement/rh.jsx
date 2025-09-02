@@ -1,5 +1,5 @@
 import React from "react";
-import { authUtils } from "../redirectionForm";
+import { authUtils } from "../../utils/redirectionForm";
 import { useState, useEffect } from "react";
 
 function Rh() {
@@ -11,17 +11,35 @@ function Rh() {
     // Vérification d'authentification et récupération des données
     const initializeComponent = async () => {
       try {
-        console.log("Initialisation du composant Informatique...");
+        console.log(
+          "Initialisation Informatique avec vérification optimisée..."
+        );
 
-        // Vérifier l'authentification avec validation du token
+        // Vérification optimisée (locale + Laravel si nécessaire)
         const isAuthenticated = await authUtils.verifyAndRedirect();
 
         if (isAuthenticated) {
           const userData = authUtils.getUserData();
+
+          if (userData.departement !== userData.departement) {
+            console.log("Mauvais département:", userData.departement);
+            alert(
+              `Accès refusée. Vous appartenez au département ${userData.departement}.`
+            );
+
+            const correctPath = authUtils.getRedirectPath(userData);
+            window.location.href = correctPath;
+            return;
+          }
+
+          console.log("Accès autorisé au département Informatique");
           setUser(userData);
+
+          //S'assurer que la déconnexion automatique est programmée
+          authUtils.scheduleAutoLogout();
         }
       } catch (err) {
-        console.log("Erreur lors de l'initialisation:", err);
+        console.error("Erreur lors de l'initialisation:", err);
         setError("Erreur de chargement");
       } finally {
         setLoading(false);

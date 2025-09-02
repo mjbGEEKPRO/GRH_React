@@ -12,7 +12,7 @@ function Select({ value, onChange, error }) {
       setOptions(res.data.postes);
       console.log("contenue du state ");
     } catch (res) {
-      console.log("Erreur reponse du serveur ", res?.data.message);
+      console.log("Erreur reponse du serveur ", res?.data?.message);
     }
   };
 
