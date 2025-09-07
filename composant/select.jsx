@@ -7,7 +7,7 @@ function Select({ value, onChange, error }) {
 
   const charger = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:8000/api/postes");
+      const res = await axios.get("http://localhost/api/postes");
       console.log("donner recupérer ", res.data);
       setOptions(res.data.postes);
       console.log("contenue du state ");

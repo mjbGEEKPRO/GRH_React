@@ -1,15 +1,26 @@
 {
   "users": [
     {
-      "id": 6,
-      "nom": "Tchinda",
-      "prenom": "joseph",
+      "id": 3,
+      "nom": "TCHINDA",
+      "prenom": "ADRIANO",
       "email": "adriano@gmail.com",
       "telephone": "674781999",
-      "statut": false,
-      "role": "Développeur",
-      "role_id": 2,
-      "departement": "Informatique"
+      "statut": true,
+      "role": "Marketiste",
+      "role_id": 5,
+      "departement": "Marketing"
+    },
+    {
+      "id": 4,
+      "nom": "mba",
+      "prenom": "david",
+      "email": "bob@gmail.com",
+      "telephone": "674781998",
+      "statut": true,
+      "role": "Manager",
+      "role_id": 6,
+      "departement": "Marketing"
     }
   ]
 }

@@ -152,18 +152,18 @@ function Code() {
           userForAdmin,
           { timeout: 10000 }
         );
-
+        console.log("deja envoyer à api")
         if (res.data.success) {
           const userForJson = res.data.user;
           await axios.post("http://localhost:5000/users", userForJson, {
             timeout: 5000,
           });
-
+          console.log("deja envoyer à json")
           toast.info("🎉 Inscription terminée avec succès !");
-
-          setTimeout(() => {
-            window.location.href = "/connexion";
-          }, 2000);
+          
+          
+          window.location.href = "/connexion";
+          
         } else {
           setError(res.data.message || "Erreur lors de l'inscription");
         }
@@ -171,7 +171,7 @@ function Code() {
         setError("❌ Code incorrect, veuillez réessayer");
       }
     } catch (error) {
-      console.error("❌ Erreur lors de la vérification:", error);
+      console.log("❌ Erreur lors de la vérification:", error);
 
       if (error.code === "ECONNABORTED") {
         setError("Délai d'attente dépassé. Vérifiez votre connexion.");

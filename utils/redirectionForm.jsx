@@ -60,18 +60,9 @@ export const authUtils = {
     }
 
     if (expiryInfo.isExpired) {
-      console.log(
-        "❌ Token expiré localement à:",
-        expiryInfo.expiryDate.toLocaleString()
-      );
       return true;
     }
 
-    console.log(
-      "✅ Token valide encore",
-      expiryInfo.timeLeftMinutes,
-      "minutes"
-    );
     return false;
   },
 
@@ -87,21 +78,15 @@ export const authUtils = {
     const token = authUtils.getToken();
 
     if (!token) {
-      console.log("❌ Aucun token trouvé");
       return false;
     }
 
     // Vérification locale d'abord
     if (authUtils.isTokenExpiredLocally()) {
-      console.log(
-        "❌ Token expiré localement - Pas d'appel serveur nécessaire"
-      );
       return false;
     }
 
     try {
-      console.log("🔍 Vérification avec Laravel...");
-
       const response = await axios.get(
         "http://127.0.0.1:8000/api/check-token",
         {
@@ -114,28 +99,22 @@ export const authUtils = {
       );
 
       if (response.data.success) {
-        console.log("✅ Token confirmé valide par Laravel");
         return true;
       }
 
       return false;
     } catch (error) {
-      console.log("❌ Erreur vérification token:", error.response?.status);
       return false;
     }
   },
 
   verifyAndRedirect: async () => {
-    console.log("🚀 Début vérification authentification optimisée...");
-
     if (!authUtils.hasAuthData()) {
-      console.log("❌ Pas de données d'authentification");
       authUtils.redirectToLogin();
       return false;
     }
 
     if (authUtils.isTokenExpiredLocally()) {
-      console.log("❌ Token expiré localement");
       authUtils.logout();
       return false;
     }
@@ -144,12 +123,10 @@ export const authUtils = {
     const isTokenValid = await authUtils.checkTokenValidity();
 
     if (!isTokenValid) {
-      console.log("❌ Token rejeté par Laravel");
       authUtils.logout();
       return false;
     }
 
-    console.log("✅ Authentification valide");
     return true;
   },
 
@@ -165,9 +142,6 @@ export const authUtils = {
 
     if (timeLeft > 0) {
       const minutes = Math.floor(timeLeft / 1000 / 60);
-      console.log(
-        ` Déconnexion automatique programmée dans ${minutes} minutes`
-      );
 
       // Nettoyer le timer précédent s'il existe
       if (authUtils.autoLogoutTimer) {
@@ -176,7 +150,6 @@ export const authUtils = {
 
       // Programmer la déconnexion
       authUtils.autoLogoutTimer = setTimeout(() => {
-        console.log("⏰ Déconnexion automatique - Session expirée");
         alert("Votre session a expiré. Reconnexion nécessaire.");
         authUtils.logout();
       }, timeLeft);
@@ -208,8 +181,6 @@ export const authUtils = {
 
   //  Logout sans erreur de référence
   logout: () => {
-    console.log("Déconnexion...");
-
     // Nettoyer le timer de déconnexion automatique
     if (authUtils.autoLogoutTimer) {
       clearTimeout(authUtils.autoLogoutTimer);
@@ -249,25 +220,23 @@ export const authUtils = {
   setupAxiosInterceptor: () => {
     // Protection contre les appels multiples
     if (authUtils._interceptorSetup) {
-      console.log("Intercepteur déjà configuré");
       return;
     }
-
-    console.log(" Configuration intercepteur...");
 
     const publicUrls = [
       "/api/postes",
       "/api/login",
       "/api/verif",
-      "/api/data",
-      "api/delete",
-      "api/getinfo",
-      "api/useEdit",
+      "/api/emeilverif",
+      "/api/passReset",
+      // "/api/data",
+      // "api/delete",
+      // "api/getinfo",
+      // "api/useEdit",
       "api/users",
       "/api/approuver",
       "http://localhost:5000/users",
-      "/api/users",
-      "/api/forgot-password",
+      // "/api/users",
     ];
 
     const isPublicUrl = (url) => {
@@ -278,7 +247,6 @@ export const authUtils = {
         if (!isPublicUrl(config.url)) {
           // Vérification rapide avant d'envoyer
           if (authUtils.isTokenExpiredLocally()) {
-            console.log("⚠️ Token expiré - Annulation requête");
             authUtils.logout();
             return Promise.reject(new Error("Token expiré"));
           }
@@ -303,7 +271,6 @@ export const authUtils = {
           !isPublicUrl(url) &&
           window.location.pathname !== "/connexion"
         ) {
-          console.log("🚨 Erreur 401 - Déconnexion");
           authUtils.logout();
         }
 
@@ -311,7 +278,6 @@ export const authUtils = {
       }
     );
     authUtils._interceptorSetup = true;
-    console.log("✅ Intercepteur configuré avec succès");
   },
 };
 
