@@ -22,7 +22,7 @@ const Permissions = () => {
 
   const charger = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:8000/api/getinfo");
+      const res = await axios.get("http://localhost/api/getinfo");
       console.log("recuperer", res.data);
       setUsers(res.data.users);
       setRoles(res.data.role);
@@ -149,7 +149,7 @@ const Permissions = () => {
       setLoading(true);
       console.log("donner à update", editForm);
       const res = await axios.put(
-        `http://127.0.0.1:8000/api/useEdit/${selectUser.id}`,
+        `http://localhost/api/useEdit/${selectUser.id}`,
         editForm
       );
 

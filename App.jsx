@@ -9,7 +9,7 @@ import Rh from "./composant/departement/rh";
 import Comptabilite from "./composant/departement/comptabilite";
 import SerdiFormationCarousel from "./composant/departement/mjb";
 import Code from "./Authentification/code";
-import Admin from "./composant/interface/admin";
+import Admin from "./composant/interface/admin/admin";
 import AdminCode from "./Authentification/codeAdmin";
 import Dashboard from "./composant/interface/dashbordTest";
 // import Appli from "./exoserdi/exercice";

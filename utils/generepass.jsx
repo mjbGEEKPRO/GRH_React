@@ -1,5 +1,5 @@
 // ✅ GÉNÉRATION DE MOT DE PASSE SÉCURISÉ
-export const generateSecurePassword = () => {
+export const generatePassword = () => {
   const lowercase = "abcdefghijklmnopqrstuvwxyz";
   const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const digits = "0123456789";

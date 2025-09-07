@@ -65,19 +65,20 @@ function Connexion() {
       await validateschem.validate(infos, { abortEarly: false });
 
       loadingToast = toast.loading("Connexion en cours...");
+      console.log("data send ", infos);
 
       const response = await axios.post(
         "http://127.0.0.1:8000/api/login",
         infos
       );
 
-      // 🔍 AJOUTEZ CES LOGS
-      console.log("=== RÉPONSE COMPLÈTE ===");
-      console.log("Response:", response.data);
-      console.log("User:", response.data.user);
-      console.log("Département:", response.data.user?.departement);
-      console.log("Poste:", response.data.user?.poste);
-      console.log("=====================");
+      // // 🔍 AJOUTEZ CES LOGS
+      // console.log("=== RÉPONSE COMPLÈTE ===");
+      // console.log("Response:", response.data);
+      // console.log("User:", response.data.user);
+      // console.log("Département:", response.data.user?.departement);
+      // console.log("Poste:", response.data.user?.poste);
+      // console.log("=====================");
 
       const serverMessage = response.data.message;
 
@@ -92,7 +93,6 @@ function Connexion() {
         );
 
         const redirectPath = authUtils.getRedirectPath(response.data.user);
-        console.log("Redirection vers:", redirectPath);
 
         // Navigation immédiate sans setTimeout
         window.location.href = redirectPath;

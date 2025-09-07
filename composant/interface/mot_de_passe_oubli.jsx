@@ -9,10 +9,13 @@ function ForgetPassword() {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  const [id, setId] = useState(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [afficher, setAfficher] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
 
@@ -35,29 +38,40 @@ function ForgetPassword() {
         setIsLoading(false);
         return;
       }
-
-      const res = await axios.put(
-        "http://127.0.0.1:8000/api/verifmeil ",
-        email
+      const mail = { email };
+      const res = await axios.post(
+        "http://127.0.0.1:8000/api/emeilverif",
+        mail
       );
+      setId(res.data.id);
+
       if (res.data.success) {
         setTimeout(() => {
-          console.log(
+          toast.success(
             `Code de réinitialisation envoyé à ${email} : ${resetCode}`
           );
           setStep(2);
           setIsLoading(false);
         }, 1500);
       }
-    } catch {
-      const status = error.response.status;
-      const serverErrorMessage = error.response.data.message;
-
-      if ([422, 401, 403, 404].includes(status)) {
-        toast.error(`🚫 ${serverErrorMessage}`);
-      } else if (status === 500) {
-        toast.error(`❌ ${serverErrorMessage}`);
+    } catch (error) {
+      if (error.response) {
+        const serverErrorMessage = error.response.data.message;
+        if (
+          error.response.status === 422 ||
+          error.response.status === 403 ||
+          error.response.status === 401 ||
+          error.response.status === 404
+        ) {
+          toast.info(`❌ ${serverErrorMessage}`);
+        } else if (error.response.status === 500) {
+          toast.error(`❌ ${serverErrorMessage}`);
+        }
+      } else {
+        toast.error("❌ Erreur de connexion, veuillez réessayer", error);
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -93,20 +107,39 @@ function ForgetPassword() {
       return;
     }
 
-    console.log(`Mot de passe réinitialisé pour ${email} : ${newPassword}`);
-    const formdata = {
-      email: email,
-      newPassword: confirmPassword,
-    };
-    const res = await axios.put(
-      "http://127.0.0.1:8000/api/resetpassword",
-      formdata
-    );
+    try {
+      const password = { password: confirmPassword };
+      console.log("password envoyer", password);
+      const res = await axios.put(
+        `http://127.0.0.1:8000/api/passReset/${id}`,
+        password
+      );
 
-    setSuccess(res.data.message);
-    setTimeout(() => {
-      window.location.href = "/connexion";
-    }, 2000);
+      setSuccess(res.data.message);
+      setTimeout(() => {
+        window.location.href = "/connexion";
+      }, 2000);
+    } catch (error) {
+      if (error.response) {
+        const serverErrorMessage = error.response.data.message;
+        if (
+          error.response.status === 422 ||
+          error.response.status === 403 ||
+          error.response.status === 401 ||
+          error.response.status === 404
+        ) {
+          toast.info(`❌ ${serverErrorMessage}`);
+        } else if (error.response.status === 500) {
+          toast.error(`❌ ${serverErrorMessage}`);
+        }
+      } else {
+        toast.error("❌ Erreur ", error);
+        console.log("erreur", error);
+      }
+    }
+  };
+  const Afficher = (e) => {
+    setAfficher(e.target.checked);
   };
 
   const getStepIndicator = (stepNumber) => {
@@ -313,7 +346,7 @@ function ForgetPassword() {
                       Nouveau mot de passe
                     </label>
                     <input
-                      type="password"
+                      type={afficher ? "text" : "password"}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
@@ -330,7 +363,7 @@ function ForgetPassword() {
                       Confirmer le mot de passe
                     </label>
                     <input
-                      type="password"
+                      type={afficher ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
@@ -346,7 +379,17 @@ function ForgetPassword() {
                       </p>
                     )}
                   </div>
-
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={afficher}
+                      onChange={Afficher}
+                      className="w-4 h-4 text-purple-600 bg-white/20 border-white/30 rounded focus:ring-purple-500 focus:ring-2"
+                    />
+                    <label className="text-white/80">
+                      Afficher le mot de passe
+                    </label>
+                  </div>
                   <button
                     type="button"
                     onClick={handleResetPassword}
@@ -385,6 +428,18 @@ function ForgetPassword() {
         </div>
       </div>
 
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
       <ToastContainer
         position="top-right"
         autoClose={5000}

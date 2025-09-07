@@ -13,7 +13,7 @@ export const envoyerEmailIdentifiants = async (
     const params = {
       greeting: getGreeting(),
       name: `${utilisateur.prenom} ${utilisateur.nom}`,
-      email: utilisateur.email, // Email personnel pour recevoir les identifiants
+      email: utilisateur.email, 
       email_pro: emailPro,
       password_pro: motDePassePro,
       poste: utilisateur.poste,
