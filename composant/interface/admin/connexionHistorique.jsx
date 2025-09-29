@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -19,6 +20,7 @@ const ConnectionHistory = () => {
     "Administration",
     "Informatique",
     "Comptabilité",
+    "Marketing",
     "Ressources humaines",
   ];
 
@@ -41,9 +43,9 @@ const ConnectionHistory = () => {
           delete params[key];
         }
       });
-      console.log("params ", params);
+
       const response = await axios.get(
-        "http://127.0.0.1:8000/api/admin/connection-history",
+        "http://localhost:8000/api/admin/connection-history",
         {
           params,
         }
@@ -53,10 +55,25 @@ const ConnectionHistory = () => {
         setConnections(response.data.data);
         setPagination(response.data.pagination);
         setStats(response.data.stats);
+        console.log("data conection ", response.data.data);
       }
     } catch (error) {
-      console.error("Erreur lors du chargement:", error);
-      toast.error("Erreur lors du chargement de l'historique");
+      if (error.response) {
+        const serverErrorMessage = error.response.data.message;
+        if (
+          error.response.status === 422 ||
+          error.response.status === 403 ||
+          error.response.status === 401 ||
+          error.response.status === 404
+        ) {
+          toast.info(`❌ ${serverErrorMessage}`);
+        } else if (error.response.status === 500) {
+          toast.error(`❌ ${serverErrorMessage}`);
+        }
+      } else {
+        toast.error("Erreur lors du chargement des données");
+        console.log("erreur", error);
+      }
     } finally {
       setLoading(false);
     }
@@ -80,7 +97,7 @@ const ConnectionHistory = () => {
       });
 
       const response = await axios.get(
-        "http://127.0.0.1:8000/api/admin/connection-history/export",
+        "http://localhost:8000/api/admin/connection-history/export",
         {
           params,
           responseType: "blob",
@@ -364,6 +381,9 @@ const ConnectionHistory = () => {
                   Département
                 </th>
                 <th className="text-left text-white/70 font-medium py-3 px-4">
+                  Poste
+                </th>
+                <th className="text-left text-white/70 font-medium py-3 px-4">
                   Date connexion
                 </th>
                 <th className="text-left text-white/70 font-medium py-3 px-4">
@@ -395,9 +415,6 @@ const ConnectionHistory = () => {
                     <div className="text-white font-medium">
                       {connection.prenom} {connection.nom}
                     </div>
-                    <div className="text-white/60 text-sm">
-                      {connection.poste}
-                    </div>
                   </td>
                   <td className="py-3 px-4 text-white/90 text-sm">
                     {connection.email_pro}
@@ -405,6 +422,11 @@ const ConnectionHistory = () => {
                   <td className="py-3 px-4">
                     <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded">
                       {connection.departement}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded">
+                      {connection.roles}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-white/90 text-sm">

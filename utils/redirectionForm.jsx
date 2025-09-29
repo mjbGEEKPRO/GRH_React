@@ -1,6 +1,10 @@
 import axios from "axios";
 
 export const authUtils = {
+  _isLoggingOut: false,
+  _interceptorSetup: false,
+  autoLogoutTimer: null,
+
   setUserData: (userData, token, expiresAt, expiresIn) => {
     localStorage.setItem("user_data", JSON.stringify(userData));
     localStorage.setItem("access_token", token);
@@ -23,7 +27,6 @@ export const authUtils = {
     return localStorage.getItem("access_token");
   },
 
-  //informations d'expiration
   getTokenExpiryInfo: () => {
     const expiresAt = localStorage.getItem("token_expires_at");
     const expiresIn = localStorage.getItem("token_expires_in");
@@ -50,30 +53,22 @@ export const authUtils = {
     };
   },
 
-  // Vérification rapide côté client
   isTokenExpiredLocally: () => {
     const expiryInfo = authUtils.getTokenExpiryInfo();
 
     if (!expiryInfo) {
-      console.log("❌ Pas d'info d'expiration");
       return true;
     }
 
-    if (expiryInfo.isExpired) {
-      return true;
-    }
-
-    return false;
+    return expiryInfo.isExpired;
   },
 
-  // Vérification existence des données
   hasAuthData: () => {
     const token = localStorage.getItem("access_token");
     const userData = localStorage.getItem("user_data");
     return !!(token && userData);
   },
 
-  // Vérification avec Laravel
   checkTokenValidity: async () => {
     const token = authUtils.getToken();
 
@@ -81,14 +76,13 @@ export const authUtils = {
       return false;
     }
 
-    // Vérification locale d'abord
     if (authUtils.isTokenExpiredLocally()) {
       return false;
     }
 
     try {
       const response = await axios.get(
-        "http://127.0.0.1:8000/api/check-token",
+        "http://localhost:8000/api/check-token",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -98,17 +92,18 @@ export const authUtils = {
         }
       );
 
-      if (response.data.success) {
-        return true;
-      }
-
-      return false;
-    } catch (error) {
+      return response.data.success;
+    } catch {
       return false;
     }
   },
 
   verifyAndRedirect: async () => {
+    // Si logout en cours, ne pas faire de vérifications
+    if (authUtils._isLoggingOut) {
+      return false;
+    }
+
     if (!authUtils.hasAuthData()) {
       authUtils.redirectToLogin();
       return false;
@@ -119,9 +114,7 @@ export const authUtils = {
       return false;
     }
 
-    // Vérification avec Laravel (par précaution)
     const isTokenValid = await authUtils.checkTokenValidity();
-
     if (!isTokenValid) {
       authUtils.logout();
       return false;
@@ -130,7 +123,6 @@ export const authUtils = {
     return true;
   },
 
-  // programmation déconnexion automatique
   scheduleAutoLogout: () => {
     const expiryInfo = authUtils.getTokenExpiryInfo();
 
@@ -141,14 +133,10 @@ export const authUtils = {
     const timeLeft = expiryInfo.timeLeft;
 
     if (timeLeft > 0) {
-      const minutes = Math.floor(timeLeft / 1000 / 60);
-
-      // Nettoyer le timer précédent s'il existe
       if (authUtils.autoLogoutTimer) {
         clearTimeout(authUtils.autoLogoutTimer);
       }
 
-      // Programmer la déconnexion
       authUtils.autoLogoutTimer = setTimeout(() => {
         alert("Votre session a expiré. Reconnexion nécessaire.");
         authUtils.logout();
@@ -156,7 +144,6 @@ export const authUtils = {
     }
   },
 
-  // temps restant pour affichage
   getTimeLeftDisplay: () => {
     const expiryInfo = authUtils.getTokenExpiryInfo();
 
@@ -176,49 +163,83 @@ export const authUtils = {
   },
 
   redirectToLogin: () => {
-    window.location.href = "/connexion";
-  },
-
-  //  Logout sans erreur de référence
-  logout: () => {
-    // Nettoyer le timer de déconnexion automatique
-    if (authUtils.autoLogoutTimer) {
-      clearTimeout(authUtils.autoLogoutTimer);
-      authUtils.autoLogoutTimer = null;
-    }
-
-    // Nettoyer localStorage
-    localStorage.removeItem("user_data");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("token_expires_at");
-    localStorage.removeItem("token_expires_in");
-    localStorage.removeItem("login_time");
-
-    if (window.location.pathname !== "/connexion") {
-      alert("Votre session a expiré. Reconnexion nécessaire.");
-    }
-
-    window.location.href = "/connexion";
+    window.location.href = "/";
   },
 
   getRedirectPath: (user) => {
     switch (user.departement) {
-      case "Informatique":
-        return "/departement/informatique";
-      case "Comptabilité":
-        return "/departement/comptabilite";
-      case "Ressources humaines":
-        return "/departement/rh";
       case "Administration":
         return "/codeAdmin";
       default:
-        return "/connexion";
+        return "/departement/employer";
     }
   },
 
-  // Interceptor sans erreur de référence
-  setupAxiosInterceptor: () => {
+  // Version simplifiée de logout qui fonctionne
+  logout: async () => {
     // Protection contre les appels multiples
+    if (authUtils._isLoggingOut) {
+      console.log("Logout déjà en cours...");
+      return;
+    }
+
+    authUtils._isLoggingOut = true;
+    console.log("Début de la déconnexion");
+
+    try {
+      // 1. Appeler l'API de déconnexion d'abord (si token disponible)
+      const token = authUtils.getToken();
+      if (token) {
+        console.log("Appel API logout...");
+        try {
+          await axios.post(
+            "http://localhost:8000/api/logout",
+            {},
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              timeout: 5000,
+            }
+          );
+          console.log("Logout API réussi");
+        } catch (apiError) {
+          console.warn("Erreur API logout:", apiError.message);
+          // Continue même si l'API échoue
+        }
+      }
+
+      // 2. Nettoyer les timers
+      if (authUtils.autoLogoutTimer) {
+        clearTimeout(authUtils.autoLogoutTimer);
+        authUtils.autoLogoutTimer = null;
+      }
+
+      // 3. Vider le localStorage
+      localStorage.clear(); // Plus simple et efficace
+
+      // 4. Message si nécessaire
+      if (window.location.pathname !== "/connexion") {
+        alert("Déconnexion effectuée. Redirection vers la page de connexion.");
+      }
+
+      // 5. Redirection
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+      // Forcer la déconnexion même en cas d'erreur
+      localStorage.clear();
+      window.location.href = "/";
+    } finally {
+      // Reset du flag après un délai
+      setTimeout(() => {
+        authUtils._isLoggingOut = false;
+      }, 2000);
+    }
+  },
+
+  setupAxiosInterceptor: () => {
     if (authUtils._interceptorSetup) {
       return;
     }
@@ -227,60 +248,88 @@ export const authUtils = {
       "/api/postes",
       "/api/login",
       "/api/verif",
+      "/api/users",
+      "http://localhost:5000/users",
       "/api/emeilverif",
       "/api/passReset",
-      // "/api/data",
-      // "api/delete",
-      // "api/getinfo",
-      // "api/useEdit",
-      "api/users",
+      "/api/logout",
       "/api/approuver",
-      "http://localhost:5000/users",
-      // "/api/users",
     ];
 
     const isPublicUrl = (url) => {
-      return publicUrls.some((publicUrl) => url?.includes(publicUrl));
+      return publicUrls.some((publicUrl) => url && url.includes(publicUrl));
     };
+
+    // Request interceptor simplifié
     axios.interceptors.request.use(
       (config) => {
-        if (!isPublicUrl(config.url)) {
-          // Vérification rapide avant d'envoyer
-          if (authUtils.isTokenExpiredLocally()) {
-            authUtils.logout();
-            return Promise.reject(new Error("Token expiré"));
-          }
-
-          const token = authUtils.getToken();
-          if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-          }
+        // Passer les URLs publiques sans vérification
+        if (isPublicUrl(config.url)) {
+          return config;
         }
+
+        // Si logout en cours, rejeter les autres requêtes
+        if (authUtils._isLoggingOut) {
+          return Promise.reject(new Error("Logout en cours"));
+        }
+
+        // Ajouter le token si disponible et non expiré
+        const token = authUtils.getToken();
+        if (token && !authUtils.isTokenExpiredLocally()) {
+          config.headers.Authorization = `Bearer ${token}`;
+        } else if (!isPublicUrl(config.url)) {
+          // Token manquant ou expiré pour une route protégée
+          authUtils.logout();
+          return Promise.reject(new Error("Token manquant ou expiré"));
+        }
+
         return config;
       },
       (error) => Promise.reject(error)
     );
 
+    // Response interceptor simplifié
     axios.interceptors.response.use(
       (response) => response,
       (error) => {
         const status = error.response?.status;
         const url = error.config?.url;
+
+        // Si 401 sur une route protégée et pas déjà en logout
         if (
           status === 401 &&
           !isPublicUrl(url) &&
-          window.location.pathname !== "/connexion"
+          !authUtils._isLoggingOut &&
+          window.location.pathname !== "/"
         ) {
+          console.log("Token invalide détecté, déconnexion...");
           authUtils.logout();
         }
 
         return Promise.reject(error);
       }
     );
-    authUtils._interceptorSetup = true;
-  },
-};
 
-authUtils.isAuthenticated = () => {
-  return authUtils.hasAuthData() && !authUtils.isTokenExpiredLocally();
+    authUtils._interceptorSetup = true;
+    console.log("Interceptors configurés");
+  },
+
+  debugTokenState: () => {
+    const token = authUtils.getToken();
+    const hasAuthData = authUtils.hasAuthData();
+    const isExpired = authUtils.isTokenExpiredLocally();
+    const isLoggingOut = authUtils._isLoggingOut;
+
+    console.log("Debug Token State:", {
+      hasToken: !!token,
+      tokenLength: token?.length,
+      hasAuthData,
+      isExpired,
+      isLoggingOut,
+    });
+  },
+
+  isAuthenticated: () => {
+    return authUtils.hasAuthData() && !authUtils.isTokenExpiredLocally();
+  },
 };

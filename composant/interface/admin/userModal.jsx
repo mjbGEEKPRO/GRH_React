@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { generatePassword } from "../../../utils/generepass";
 import { envoyerEmailIdentifiants } from "../../../mail/approuverUser";
@@ -76,11 +77,13 @@ function UserManagement() {
       );
 
       if (res.data.success) {
-        // await envoyerEmailIdentifiants(
-        //   selectedUser,
-        //   professionalData.emailPro,
-        //   professionalData.motDePassePro
-        // );
+        await envoyerEmailIdentifiants(
+          selectedUser,
+          professionalData.emailPro,
+          professionalData.motDePassePro,
+          selectedUser.role,
+          selectedUser.departement
+        );
         toast.success(res.data.message);
         const userForJson = res.data.user;
         await axios.post(
@@ -346,6 +349,20 @@ function UserManagement() {
           </div>
         </div>
       )}
+      <div>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
+      </div>
     </div>
   );
 }

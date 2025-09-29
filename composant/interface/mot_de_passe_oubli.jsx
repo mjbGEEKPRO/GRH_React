@@ -4,6 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { validateCode, validatePasswords, validateEmail } from "../passverif";
+import { resetPass } from "../../mail/resetPass";
 
 function ForgetPassword() {
   const [step, setStep] = useState(1);
@@ -15,15 +16,30 @@ function ForgetPassword() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [afficher, setAfficher] = useState(false);
-
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [resetCode, setResetCode] = useState("");
+  const [nom, setNom] = useState("");
+  const generateAndSendCode = async () => {
+    const codeGenerer = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log("code geneerer ", codeGenerer);
+    setResetCode(codeGenerer);
 
-  const generateCode = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    try {
+      // const emailSent = await resetPass(email, nom, codeGenerer);
+      const emailSent = true;
+      if (emailSent) {
+        toast.success("Un code a été envoyé à votre adresse mail");
+        return true;
+      } else {
+        toast.error("Impossible d'envoyer l'email");
+        return false;
+      }
+    } catch (error) {
+      toast.error("Erreur lors de l'envoi de l'email");
+      return false;
+    }
   };
-
-  const [resetCode, setResetCode] = useState(generateCode());
 
   const handleSendCode = async () => {
     setIsLoading(true);
@@ -38,21 +54,25 @@ function ForgetPassword() {
         setIsLoading(false);
         return;
       }
+
       const mail = { email };
       const res = await axios.post(
-        "http://127.0.0.1:8000/api/emeilverif",
+        "http://localhost:8000/api/emeilverif",
         mail
       );
       setId(res.data.id);
-
+      setNom(res.data.nom);
       if (res.data.success) {
-        setTimeout(() => {
-          toast.success(
-            `Code de réinitialisation envoyé à ${email} : ${resetCode}`
-          );
-          setStep(2);
+        // const emailSent = await generateAndSendCode(nom);
+        const emailSent = true;
+        if (emailSent) {
+          setTimeout(() => {
+            setStep(2);
+            setIsLoading(false);
+          }, 1000);
+        } else {
           setIsLoading(false);
-        }, 1500);
+        }
       }
     } catch (error) {
       if (error.response) {
@@ -68,7 +88,7 @@ function ForgetPassword() {
           toast.error(`❌ ${serverErrorMessage}`);
         }
       } else {
-        toast.error("❌ Erreur de connexion, veuillez réessayer", error);
+        toast.error("❌ Erreur de connexion, veuillez réessayer");
       }
     } finally {
       setIsLoading(false);
@@ -109,15 +129,14 @@ function ForgetPassword() {
 
     try {
       const password = { password: confirmPassword };
-      console.log("password envoyer", password);
       const res = await axios.put(
-        `http://127.0.0.1:8000/api/passReset/${id}`,
+        `http://localhost:8000/api/passReset/${id}`,
         password
       );
 
       setSuccess(res.data.message);
       setTimeout(() => {
-        window.location.href = "/connexion";
+        window.location.href = "/";
       }, 2000);
     } catch (error) {
       if (error.response) {
@@ -133,30 +152,35 @@ function ForgetPassword() {
           toast.error(`❌ ${serverErrorMessage}`);
         }
       } else {
-        toast.error("❌ Erreur ", error);
-        console.log("erreur", error);
+        toast.error("❌ Erreur lors de la réinitialisation");
       }
     }
   };
+
   const Afficher = (e) => {
     setAfficher(e.target.checked);
+  };
+
+  const handleResendCode = async () => {
+    console.log("nom ", nom);
+    await generateAndSendCode(nom);
   };
 
   const getStepIndicator = (stepNumber) => {
     if (step > stepNumber)
       return (
-        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+        <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg">
           ✓
         </div>
       );
     if (step === stepNumber)
       return (
-        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg border-2 border-white/20">
           {stepNumber}
         </div>
       );
     return (
-      <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 text-sm font-bold">
+      <div className="w-8 h-8 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center text-white/50 text-sm font-bold border border-white/20">
         {stepNumber}
       </div>
     );
@@ -165,49 +189,66 @@ function ForgetPassword() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-blue-600 p-6 text-white text-center">
-            <h1 className="text-2xl font-bold mb-2">Mot de passe oublié</h1>
+        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg border-2 border-white/20">
+              <span className="text-white text-2xl">🔒</span>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-2">
+              Récupération du mot de passe
+            </h1>
+            <p className="text-white/70 text-sm">
+              Suivez les étapes pour réinitialiser votre accès
+            </p>
           </div>
 
           {/* Indicateur de progression */}
-          <div className="px-6 py-4 bg-gray-50 border-b">
+          <div className="px-8 py-6 border-b border-white/10">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-col items-center space-y-2">
                 {getStepIndicator(1)}
                 <span
-                  className={`text-sm font-medium ${
-                    step >= 1 ? "text-blue-600" : "text-gray-400"
+                  className={`text-xs font-medium ${
+                    step >= 1 ? "text-white" : "text-white/50"
                   }`}
                 >
                   E-mail
                 </span>
               </div>
+
               <div
-                className={`flex-1 h-1 mx-3 rounded ${
-                  step > 1 ? "bg-green-400" : "bg-gray-200"
+                className={`flex-1 h-1 mx-4 rounded-full ${
+                  step > 1
+                    ? "bg-gradient-to-r from-green-400 to-emerald-400"
+                    : "bg-white/20"
                 }`}
               ></div>
-              <div className="flex items-center space-x-2">
+
+              <div className="flex flex-col items-center space-y-2">
                 {getStepIndicator(2)}
                 <span
-                  className={`text-sm font-medium ${
-                    step >= 2 ? "text-blue-600" : "text-gray-400"
+                  className={`text-xs font-medium ${
+                    step >= 2 ? "text-white" : "text-white/50"
                   }`}
                 >
                   Code
                 </span>
               </div>
+
               <div
-                className={`flex-1 h-1 mx-3 rounded ${
-                  step > 2 ? "bg-green-400" : "bg-gray-200"
+                className={`flex-1 h-1 mx-4 rounded-full ${
+                  step > 2
+                    ? "bg-gradient-to-r from-green-400 to-emerald-400"
+                    : "bg-white/20"
                 }`}
               ></div>
-              <div className="flex items-center space-x-2">
+
+              <div className="flex flex-col items-center space-y-2">
                 {getStepIndicator(3)}
                 <span
-                  className={`text-sm font-medium ${
-                    step >= 3 ? "text-blue-600" : "text-gray-400"
+                  className={`text-xs font-medium ${
+                    step >= 3 ? "text-white" : "text-white/50"
                   }`}
                 >
                   Nouveau
@@ -216,37 +257,37 @@ function ForgetPassword() {
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-8">
             {step === 1 && (
               <div className="space-y-6">
-                <div className="text-center">
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                    Saisissez votre e-mail
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-semibold text-white mb-2">
+                    Saisissez votre adresse e-mail
                   </h2>
-                  <p className="text-gray-600 text-sm">
-                    Nous vous enverrons un code de réinitialisation
+                  <p className="text-white/70 text-sm">
+                    Nous vous enverrons un code de réinitialisation sécurisé
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Adresse e-mail
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      Adresse e-mail professionnelle
                     </label>
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                      className={`w-full px-6 py-4 bg-white/10 backdrop-blur-sm border rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 ${
                         validationErrors.email
-                          ? "border-red-500"
-                          : "border-gray-300"
+                          ? "border-red-500/50"
+                          : "border-white/20"
                       }`}
-                      placeholder="votre.email@exemple.com"
+                      placeholder="prenom.nom@entreprise.com"
                       disabled={isLoading}
                     />
                     {validationErrors.email && (
-                      <p className="mt-1 text-sm text-red-600">
+                      <p className="mt-2 text-sm text-red-300 bg-red-500/10 p-2 rounded-lg border border-red-500/20">
                         {validationErrors.email}
                       </p>
                     )}
@@ -256,11 +297,11 @@ function ForgetPassword() {
                     type="button"
                     onClick={handleSendCode}
                     disabled={isLoading}
-                    className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-2xl font-medium hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
                     {isLoading ? (
                       <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                         Envoi en cours...
                       </div>
                     ) : (
@@ -273,35 +314,37 @@ function ForgetPassword() {
 
             {step === 2 && (
               <div className="space-y-6">
-                <div className="text-center">
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-semibold text-white mb-2">
                     Vérifiez votre code
                   </h2>
-                  <p className="text-gray-600 text-sm">
-                    Nous avons envoyé un code à cette adresse email{" "}
-                    <span className="font-medium text-blue-600">{email}</span>
+                  <p className="text-white/70 text-sm">
+                    Code envoyé à{" "}
+                    <span className="font-medium text-blue-300">{email}</span>
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Code de réinitialisation
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      Code de réinitialisation (6 chiffres)
                     </label>
                     <input
                       type="text"
                       value={code}
-                      onChange={(e) => setCode(e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-center text-lg tracking-widest ${
+                      onChange={(e) =>
+                        setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                      }
+                      className={`w-full px-6 py-4 bg-white/10 backdrop-blur-sm border rounded-2xl text-white text-center text-2xl font-mono tracking-widest placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 ${
                         validationErrors.code
-                          ? "border-red-500"
-                          : "border-gray-300"
+                          ? "border-red-500/50"
+                          : "border-white/20"
                       }`}
                       placeholder="000000"
                       maxLength="6"
                     />
                     {validationErrors.code && (
-                      <p className="mt-1 text-sm text-red-600">
+                      <p className="mt-2 text-sm text-red-300 bg-red-500/10 p-2 rounded-lg border border-red-500/20">
                         {validationErrors.code}
                       </p>
                     )}
@@ -310,18 +353,15 @@ function ForgetPassword() {
                   <button
                     type="button"
                     onClick={handleVerifyCode}
-                    className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-2xl font-medium hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300 shadow-lg"
                   >
                     Vérifier le code
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setResetCode(generateCode());
-                      console.log(`Nouveau code généré: ${resetCode}`);
-                    }}
-                    className="w-full text-blue-600 py-2 px-4 rounded-lg font-medium hover:bg-blue-50 transition-all duration-200"
+                    onClick={handleResendCode}
+                    className="w-full bg-white/10 backdrop-blur-sm border border-white/20 text-white py-3 px-6 rounded-2xl font-medium hover:bg-white/20 transition-all duration-300"
                   >
                     Renvoyer le code
                   </button>
@@ -331,69 +371,80 @@ function ForgetPassword() {
 
             {step === 3 && (
               <div className="space-y-6">
-                <div className="text-center">
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-semibold text-white mb-2">
                     Nouveau mot de passe
                   </h2>
-                  <p className="text-gray-600 text-sm">
-                    Choisissez un mot de passe sécurisé
+                  <p className="text-white/70 text-sm">
+                    Choisissez un mot de passe fort et sécurisé
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
                       Nouveau mot de passe
                     </label>
-                    <input
-                      type={afficher ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                        validationErrors.password
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }`}
-                      placeholder="Nouveau mot de passe"
-                    />
+                    <div className="relative">
+                      <input
+                        type={afficher ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className={`w-full px-6 py-4 pr-12 bg-white/10 backdrop-blur-sm border rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 ${
+                          validationErrors.password
+                            ? "border-red-500/50"
+                            : "border-white/20"
+                        }`}
+                        placeholder="Nouveau mot de passe"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setAfficher(!afficher)}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+                      >
+                        {afficher ? "👁️" : "🙈"}
+                      </button>
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
                       Confirmer le mot de passe
                     </label>
                     <input
                       type={afficher ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                      className={`w-full px-6 py-4 bg-white/10 backdrop-blur-sm border rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 ${
                         validationErrors.password
-                          ? "border-red-500"
-                          : "border-gray-300"
+                          ? "border-red-500/50"
+                          : "border-white/20"
                       }`}
                       placeholder="Confirmer le mot de passe"
                     />
                     {validationErrors.password && (
-                      <p className="mt-1 text-sm text-red-600">
+                      <p className="mt-2 text-sm text-red-300 bg-red-500/10 p-2 rounded-lg border border-red-500/20">
                         {validationErrors.password}
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2">
+
+                  <div className="flex items-center space-x-3 bg-white/5 p-3 rounded-lg">
                     <input
                       type="checkbox"
                       checked={afficher}
                       onChange={Afficher}
                       className="w-4 h-4 text-purple-600 bg-white/20 border-white/30 rounded focus:ring-purple-500 focus:ring-2"
                     />
-                    <label className="text-white/80">
-                      Afficher le mot de passe
+                    <label className="text-white/80 text-sm">
+                      Afficher les mots de passe
                     </label>
                   </div>
+
                   <button
                     type="button"
                     onClick={handleResetPassword}
-                    className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200"
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 px-6 rounded-2xl font-medium hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all duration-300 shadow-lg"
                   >
                     Réinitialiser le mot de passe
                   </button>
@@ -402,24 +453,25 @@ function ForgetPassword() {
             )}
 
             {error && (
-              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-700 text-sm">{error}</p>
+              <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-red-300 text-sm text-center">{error}</p>
               </div>
             )}
 
             {success && (
-              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-700 text-sm">{success}</p>
+              <div className="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <p className="text-green-300 text-sm text-center">{success}</p>
               </div>
             )}
           </div>
 
-          <div className="px-6 py-4 bg-gray-50 border-t text-center">
-            <p className="text-xs text-gray-500">
+          {/* Footer */}
+          <div className="px-8 py-6 bg-white/5 border-t border-white/10 text-center">
+            <p className="text-xs text-white/60">
               Vous vous souvenez de votre mot de passe ?
               <Link
-                to={"/connexion"}
-                className="text-blue-600 hover:text-blue-700 font-medium ml-1"
+                to="/connexion"
+                className="text-blue-400 hover:text-blue-300 font-medium ml-1 transition-colors"
               >
                 Se connecter
               </Link>
@@ -439,18 +491,7 @@ function ForgetPassword() {
         draggable
         pauseOnHover
         theme="dark"
-      />
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
+        className="backdrop-blur-lg"
       />
     </div>
   );

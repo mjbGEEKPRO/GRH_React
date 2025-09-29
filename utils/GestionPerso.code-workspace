@@ -1,0 +1,14 @@
+{
+  "folders": [
+	{
+		"path": "../.."
+	},
+	{
+		"path": "../../../../../../../../OpenResty"
+	},
+	{
+		"path": "../../../gestion-personnel-api"
+	}
+],
+  "settings": {}
+}

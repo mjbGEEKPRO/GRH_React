@@ -7,11 +7,11 @@ import ConnectionHistory from "./connexionHistorique";
 import ProjectManagement from "./projectModal";
 import TaskManagement from "./taskModal";
 import UserManagement from "./userModal";
-import axios from "axios";
-
+import Settings from "../setting";
 function Admin() {
   const [user, setUser] = useState(null);
   const [activeSection, setActiveSection] = useState("users");
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -164,6 +164,32 @@ function Admin() {
                 }
               </p>
             </div>
+            {/* Bouton Paramètres */}
+            <button
+              onClick={() => setShowSettings(true)}
+              className="bg-white/10 backdrop-blur-sm border border-white/20 py-2 px-4 rounded-2xl text-white hover:bg-white/20 transition-all duration-300"
+              title="Paramètres"
+            >
+              <svg
+                className="w-5 h-5 group-hover:rotate-45 transition-transform duration-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+            </button>
             <button
               onClick={handleLogout}
               className="bg-white/10 backdrop-blur-sm border border-white/20 py-2 px-4 rounded-2xl text-white hover:bg-white/20 transition-all duration-300"
@@ -176,20 +202,10 @@ function Admin() {
         {/* Content Area */}
         <main className="flex-1 p-6 overflow-y-auto">{renderContent()}</main>
       </div>
-
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-        className="backdrop-blur-lg"
-      />
+      {/* Composant Paramètres */}
+      {showSettings && (
+        <Settings user={user} onClose={() => setShowSettings(false)} />
+      )}
     </div>
   );
 }

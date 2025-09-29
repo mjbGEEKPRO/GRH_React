@@ -45,7 +45,6 @@ function Code() {
 
   // Reset du timer
   const resetAndStartTimer = useCallback(() => {
-    console.log("Timer réinitialisé");
     setEstValide(false);
     setCompteur(60);
     setTimeout(() => {
@@ -74,7 +73,7 @@ function Code() {
 
       // Redirection après 3 secondes
       setTimeout(() => {
-        navigate("/");
+        navigate("/formulaire");
       }, 3000);
     }
   }, [location.state, navigate]);
@@ -145,25 +144,23 @@ function Code() {
         toast.success("✅ Code vérifié avec succès");
 
         // Appel à l'API
-        console.log("user pour admin api ", userForAdmin.dateNaissance);
+        console.log("user pour admin api ", userForAdmin);
         console.log("📤 Envoi à l'API...");
         const res = await axios.post(
           "http://127.0.0.1:8000/api/users",
           userForAdmin,
           { timeout: 10000 }
         );
-        console.log("deja envoyer à api")
+        console.log("deja envoyer à api");
         if (res.data.success) {
           const userForJson = res.data.user;
-          await axios.post("http://localhost:5000/users", userForJson, {
+          await axios.post("http://192.168.203.168:5000/users", userForJson, {
             timeout: 5000,
           });
-          console.log("deja envoyer à json")
+          console.log("deja envoyer à json");
           toast.info("🎉 Inscription terminée avec succès !");
-          
-          
-          window.location.href = "/connexion";
-          
+
+          window.location.href = "/";
         } else {
           setError(res.data.message || "Erreur lors de l'inscription");
         }
@@ -171,8 +168,22 @@ function Code() {
         setError("❌ Code incorrect, veuillez réessayer");
       }
     } catch (error) {
-      console.log("❌ Erreur lors de la vérification:", error);
-
+      if (error.response) {
+        const serverErrorMessage = error.response.data.message;
+        if (
+          error.response.status === 422 ||
+          error.response.status === 403 ||
+          error.response.status === 401 ||
+          error.response.status === 404
+        ) {
+          toast.info(`❌ ${serverErrorMessage}`);
+        } else if (error.response.status === 500) {
+          toast.error(`❌ ${serverErrorMessage}`);
+        }
+      } else {
+        toast.error("❌ Erreur ", error);
+        console.log("erreur", error);
+      }
       if (error.code === "ECONNABORTED") {
         setError("Délai d'attente dépassé. Vérifiez votre connexion.");
       } else if (error.response?.status === 422) {

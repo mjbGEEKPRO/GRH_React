@@ -1,7 +1,7 @@
 {
   "users": [
     {
-      "id": 3,
+      "id": "3",
       "nom": "TCHINDA",
       "prenom": "ADRIANO",
       "email": "adriano@gmail.com",
@@ -12,7 +12,7 @@
       "departement": "Marketing"
     },
     {
-      "id": 4,
+      "id": "4",
       "nom": "mba",
       "prenom": "david",
       "email": "bob@gmail.com",
@@ -21,6 +21,72 @@
       "role": "Manager",
       "role_id": 6,
       "departement": "Marketing"
+    },
+    {
+      "id": "5",
+      "nom": "jean",
+      "prenom": "dupont",
+      "email": "dupont@gmail.com",
+      "telephone": "674781991",
+      "statut": false,
+      "role": "Secrétaire",
+      "role_id": 1,
+      "departement": "Marketing"
+    },
+    {
+      "id": "7",
+      "nom": "serdi",
+      "prenom": "entreprise",
+      "email": "serdi@gmail.com",
+      "telephone": "674781997",
+      "statut": true,
+      "role": "Marketiste",
+      "role_id": 5,
+      "departement": "Marketing"
+    },
+    {
+      "id": "4",
+      "nom": "gregroire",
+      "prenom": "Batama",
+      "email": "gregoirejunior2434@gmail.com",
+      "telephone": "674781995",
+      "statut": false,
+      "role": "Développeur",
+      "role_id": 2,
+      "departement": "Informatique"
+    },
+    {
+      "id": "5",
+      "nom": "Tchinda",
+      "prenom": "Adriano",
+      "email": "adrianotchinda26@gmail.com",
+      "telephone": "674781912",
+      "statut": false,
+      "role": "Développeur",
+      "role_id": 2,
+      "departement": "Informatique"
+    },
+    {
+      "id": 7,
+      "nom": "TEST",
+      "prenom": "Test",
+      "email": "test@gmail.com",
+      "telephone": "674781992",
+      "statut": false,
+      "role": "Comptable",
+      "role_id": 4,
+      "departement": "Comptabilité"
+    },
+    {
+      "id": 6,
+      "nom": "testutil",
+      "prenom": "lundi",
+      "email": "testtutil11h_13lun0@gmail.com",
+      "telephone": "653405004",
+      "statut": false,
+      "role": "Développeur",
+      "role_id": 2,
+      "departement": "Informatique"
     }
   ]
 }

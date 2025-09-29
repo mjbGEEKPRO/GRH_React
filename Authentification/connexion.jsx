@@ -65,12 +65,8 @@ function Connexion() {
       await validateschem.validate(infos, { abortEarly: false });
 
       loadingToast = toast.loading("Connexion en cours...");
-      console.log("data send ", infos);
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/login",
-        infos
-      );
+      const response = await axios.post("http://192.168.56.1/api/login", infos);
 
       // // 🔍 AJOUTEZ CES LOGS
       // console.log("=== RÉPONSE COMPLÈTE ===");
@@ -106,8 +102,6 @@ function Connexion() {
       if (loadingToast) {
         toast.dismiss(loadingToast);
       }
-
-      console.log("Erreur complète:", error);
 
       if (error.name === "ValidationError") {
         const validationErrors = {};
@@ -283,7 +277,7 @@ function Connexion() {
             <p className="text-white/80 text-sm">
               Vous n'avez pas de compte ?{" "}
               <Link
-                to={"/"}
+                to={"/formulaire"}
                 className="text-white hover:text-white/80 font-semibold underline transition duration-200"
               >
                 Créer un compte

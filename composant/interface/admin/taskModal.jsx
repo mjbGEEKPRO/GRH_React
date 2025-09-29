@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
+import { assignTask } from "../../../mail/taskAssign";
 
 function TaskManagement() {
   const [tasks, setTasks] = useState([]);
@@ -34,13 +36,12 @@ function TaskManagement() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const res3 = await axios.get("http://localhost/api/userTast");
-      const res1 = await axios.get("http://127.0.0.1:8000/api/admin-data");
+      const res3 = await axios.get("http://localhost:8000/api/userTast");
+      const res1 = await axios.get("http://localhost:8000/api/admin-data");
 
-      setProjects(res1.data.data.projets);
+      setProjects(res1.data.data.projects);
       setUsers(res3.data.users);
       setTasks(res1.data.data.task);
-      console.log("tache recu ", res1.data.data.task);
     } catch (error) {
       if (error.response) {
         const serverErrorMessage = error.response.data.message;
@@ -94,7 +95,22 @@ function TaskManagement() {
 
       if (res4.data.success) {
         setTasks([res4.data.tasks]);
-        toast.success("Tâche assignée avec succès !");
+
+        // Envoyer l'email de notification
+        const emailData = res4.data.email_data;
+        if (emailData) {
+          const emailSent = await assignTask(
+            emailData.assigned_user.email,
+            emailData.assigned_user.nom,
+            emailData.task,
+            emailData.creator,
+            emailData.project
+          );
+
+          if (emailSent) {
+            toast.success("Email de notification de tâche envoyé");
+          }
+        }
 
         setShowTaskModal(false);
         setTaskForm({
@@ -157,7 +173,7 @@ function TaskManagement() {
           toast.error(`❌ ${serverErrorMessage}`);
         }
       } else {
-        toast.error("❌ Erreur lors de la création de la tâche", error);
+        toast.error("❌ Erreur lors de la création de la tâchesss");
         console.log("erreur", error);
       }
     }
@@ -239,33 +255,21 @@ function TaskManagement() {
         }
       }
     } catch (error) {
-      console.error("Erreur complète:", error);
-
       if (error.response) {
-        const serverErrorMessage =
-          error.response.data.message || "Erreur inconnue";
-        const status = error.response.status;
-
-        if (status === 422) {
-          console.error("Erreurs de validation:", error.response.data.errors);
-          toast.error(`Données invalides: ${serverErrorMessage}`);
-        } else if (status === 401) {
-          toast.error("Non autorisé. Veuillez vous reconnecter.");
-        } else if (status === 403) {
-          toast.error(`Permission refusée: ${serverErrorMessage}`);
-        } else if (status === 404) {
-          toast.error(`Projet non trouvé: ${serverErrorMessage}`);
-        } else if (status === 409) {
-          toast.error(`Conflit: ${serverErrorMessage}`);
-        } else if (status === 500) {
-          toast.error(`Erreur serveur: ${serverErrorMessage}`);
-        } else {
-          toast.error(`Erreur ${status}: ${serverErrorMessage}`);
+        const serverErrorMessage = error.response.data.message;
+        if (
+          error.response.status === 422 ||
+          error.response.status === 403 ||
+          error.response.status === 401 ||
+          error.response.status === 404
+        ) {
+          toast.info(`❌ ${serverErrorMessage}`);
+        } else if (error.response.status === 500) {
+          toast.error(`❌ ${serverErrorMessage}`);
         }
-      } else if (error.request) {
-        toast.error("Pas de réponse du serveur. Vérifiez votre connexion.");
       } else {
-        toast.error("Erreur lors de la création des équipes");
+        toast.error("❌ Erreur ", error);
+        console.log("erreur", error);
       }
     }
   };
@@ -782,6 +786,20 @@ function TaskManagement() {
           </div>
         </div>
       )}
+      <div>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
+      </div>
     </div>
   );
 }

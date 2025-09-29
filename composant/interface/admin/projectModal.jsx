@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
-
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 function ProjectManagement() {
   const [projects, setProjects] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -24,11 +24,11 @@ function ProjectManagement() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost/api/admin-data`);
+      const res = await axios.get(`http://localhost:8000/api/admin-data`);
       // setDepartments(mockDepartments);
-      setProjects(res.data.data.projets);
-      setDepartments(res.data.departements);
-      console.log("projet ", res.data.data.projets);
+      setProjects(res.data.data.projects);
+      console.log("departement ", res.data.departements);
+      setDepartments(res.data.data.departements);
     } catch {
       toast.error("Erreur lors du chargement des données");
     } finally {
@@ -92,16 +92,17 @@ function ProjectManagement() {
         toast.success(res.data.message);
       }
     } catch (error) {
-      if (error.res) {
-        const serverErrorMessage = error.res.data.message;
+      if (error.response) {
+        const serverErrorMessage = error.response.data.message;
         if (
-          error.res.status === 422 ||
-          error.res.status === 403 ||
-          error.res.status === 401 ||
-          error.res.status === 404
+          error.response.status === 422 ||
+          error.response.status === 403 ||
+          error.response.status === 401 ||
+          error.response.status === 404
         ) {
           toast.info(`❌ ${serverErrorMessage}`);
-        } else if (error.res.status === 500) {
+          console.log("erreur projet ", error.response.data.errors);
+        } else if (error.response.status === 500) {
           toast.error(`❌ ${serverErrorMessage}`);
         }
       } else {
@@ -116,36 +117,35 @@ function ProjectManagement() {
     }
 
     try {
-      console.log("id projet", projectId);
-      const res2 = await axios.delete(
+      const response = await axios.delete(
         `http://127.0.0.1:8000/api/deleted/${projectId}`
       );
-      if (res2.data.success) {
-        toast.success(res2.data.message);
+      if (response.data.success) {
+        toast.success(response.data.message);
         setProjects(projects.filter((p) => p.id !== projectId));
       }
     } catch (error) {
       if (error.response) {
         const serverErrorMessage = error.response.data.message;
+
         if (
           error.response.status === 422 ||
           error.response.status === 403 ||
           error.response.status === 401 ||
-          error.response.status === 400 ||
-          error.response.status === 404
+          error.response.status === 400
         ) {
-          toast.info(`❌ ${serverErrorMessage}`);
+          toast.info(serverErrorMessage);
         } else if (error.response.status === 500) {
           toast.error(`❌ ${serverErrorMessage}`);
         }
       } else {
         toast.error("❌ Erreur ", error);
-        console.log("erreur", error.response.data.message);
+        console.log("erreur", error);
       }
     }
   };
 
-  const getProgressPercentage = (project) => {
+  const getProgressPercentage = () => {
     return 5;
   };
 
@@ -386,6 +386,20 @@ function ProjectManagement() {
           </div>
         </div>
       )}
+      <div>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
+      </div>
     </div>
   );
 }

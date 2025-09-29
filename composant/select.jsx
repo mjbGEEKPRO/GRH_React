@@ -7,10 +7,8 @@ function Select({ value, onChange, error }) {
 
   const charger = async () => {
     try {
-      const res = await axios.get("http://localhost/api/postes");
-      console.log("donner recupérer ", res.data);
+      const res = await axios.get("http://localhost:8000/api/postes");
       setOptions(res.data.postes);
-      console.log("contenue du state ");
     } catch (res) {
       console.log("Erreur reponse du serveur ", res?.data?.message);
     }

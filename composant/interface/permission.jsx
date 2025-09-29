@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
+import DeleteTeamsModal from "./admin/deleteTeams";
+
 const Permissions = () => {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -13,6 +15,7 @@ const Permissions = () => {
   const [selectTeams, setSelectTeams] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // États pour les données du formulaire modal
   const [editForm, setEditForm] = useState({
@@ -22,18 +25,27 @@ const Permissions = () => {
 
   const charger = async () => {
     try {
-      const res = await axios.get("http://localhost/api/getinfo");
-      console.log("recuperer", res.data);
+      const res = await axios.get("http://localhost:8000/api/permission");
       setUsers(res.data.users);
       setRoles(res.data.role);
+      console.log("user ", res.data.users);
       setPermissions(res.data.permissions);
       setTeams(res.data.teams);
-    } catch (res) {
-      const serverErrorMessage = res.data.message;
-      if (res.status === 422) {
-        toast.info(`❌ ${serverErrorMessage}`);
-      } else if (res.status === 500) {
-        toast.error(`❌ ${serverErrorMessage}`);
+    } catch (error) {
+      if (error.response) {
+        const serverErrorMessage = error.response.data.message;
+        if (
+          error.response.status === 422 ||
+          error.response.status === 403 ||
+          error.response.status === 401 ||
+          error.response.status === 404
+        ) {
+          toast.info(`❌ ${serverErrorMessage}`);
+        } else if (error.response.status === 500) {
+          toast.error(`❌ ${serverErrorMessage}`);
+        }
+      } else {
+        toast.error("❌ Erreur ");
       }
     }
   };
@@ -43,7 +55,6 @@ const Permissions = () => {
   }, []);
 
   const UserSelection = (user) => {
-    console.log("User sélectionné:", user);
     setSelectUser(user);
 
     if (user.role?.id) {
@@ -176,7 +187,13 @@ const Permissions = () => {
       }
     }
   };
-
+  // Callback appelé après suppression des équipes
+  const handleTeamsDeleted = (deletedTeamIds) => {
+    // Mettre à jour l'état local en supprimant les équipes supprimées
+    setTeams((prevTeams) =>
+      prevTeams.filter((team) => !deletedTeamIds.includes(team.id))
+    );
+  };
   const Modal = () => {
     if (!showModal) return null;
 
@@ -375,6 +392,26 @@ const Permissions = () => {
                           />
                         </svg>
                         Modifier
+                      </button>
+                      <button
+                        onClick={() => setShowDeleteModal(true)}
+                        disabled={teams.length === 0}
+                        className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                        Supprimer des équipes
                       </button>
                     </div>
 
@@ -666,7 +703,13 @@ const Permissions = () => {
       </div>
 
       <Modal />
-
+      {/* Modal de suppression */}
+      <DeleteTeamsModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        teams={teams}
+        onTeamsDeleted={handleTeamsDeleted}
+      />
       <ToastContainer
         position="top-right"
         autoClose={5000}

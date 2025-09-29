@@ -83,16 +83,18 @@ function Formulaire() {
       );
 
       if (response.data.success) {
-        toast.update(loadingToast, {
-          render: `✅ ${response.data.message}`,
-          type: "success",
-          isLoading: false,
-          autoClose: 2000,
-        });
+        toast.update(
+          loadingToast,
+          {
+            render: `✅ Envoie de l'email}`,
+            type: "success",
+            isLoading: false,
+            autoClose: 2000,
+          },
+          `${response.data.message}`
+        );
 
-        console.log("Utilisateur créé:", response.data.user);
         const userForAdmin = infos;
-        console.log("user for admin form ", userForAdmin);
         setTimeout(() => {
           navigate("/code", {
             state: {
@@ -127,13 +129,19 @@ function Formulaire() {
         setErreur(validationErrors);
       } else if (error.response) {
         const serverErrorMessage = error.response.data.message;
-        if (error.response.status === 422) {
+        if (
+          error.response.status === 422 ||
+          error.response.status === 403 ||
+          error.response.status === 401 ||
+          error.response.status === 404
+        ) {
           toast.info(`❌ ${serverErrorMessage}`);
         } else if (error.response.status === 500) {
           toast.error(`❌ ${serverErrorMessage}`);
         }
       } else {
-        toast.error("❌ Erreur de connexion, veuillez réessayer", error);
+        toast.error("❌ Erreur ", error);
+        console.log("erreur", error);
       }
     } finally {
       setLoading(false);
@@ -490,7 +498,7 @@ function Formulaire() {
             <p className="text-gray-300">
               Vous avez un compte ?{" "}
               <Link
-                to="/connexion"
+                to="/"
                 className="text-transparent bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text font-semibold hover:from-purple-300 hover:to-pink-300 transition-all duration-200 underline decoration-purple-400"
               >
                 Se connecter
